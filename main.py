@@ -44,6 +44,17 @@ def init_db():
     conn.commit()
     conn.close()
 init_db()
+# --- Хендлеры (обработчики) ---
+@dp.message(Command("start"))
+async def cmd_start(message: types.Message):
+    await message.answer
+    welcome_text = (
+        "✨ **Добро пожаловать в LOOKY!**\n\n"
+        "Я помогу найти одежду на маркетплейсах по фото или описанию.\n\n"
+        "Чтобы узнать, как я работаю, нажми: /help\n"
+        "Или просто жми кнопку ниже! 👇"
+    )
+    await message.answer(welcome_text, reply_markup=get_main_kb(), parse_mode="Markdown")
 # Функция для проверки подписки
 def check_sub(user_id):
     if user_id in ADMIN_IDS: return True
@@ -80,17 +91,6 @@ def get_main_kb():
     builder.adjust(1, 2, 1)
     return builder.as_markup(resize_keyboard=True)
 
-# --- Хендлеры (обработчики) ---
-@dp.message(Command("start"))
-async def cmd_start(message: types.Message):
-    await message.answer
-    welcome_text = (
-        "✨ **Добро пожаловать в LOOKY!**\n\n"
-        "Я помогу найти одежду на маркетплейсах по фото или описанию.\n\n"
-        "Чтобы узнать, как я работаю, нажми: /help\n"
-        "Или просто жми кнопку ниже! 👇"
-    )
-    await message.answer(welcome_text, reply_markup=get_main_kb(), parse_mode="Markdown")
 
 @dp.message(Command("help"))
 @dp.message(F.text == "📖 Инструкция")

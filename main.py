@@ -60,74 +60,44 @@ def check_sub(user_id):
     conn.close()
     return result and result[0] == 1
 # --- ПРОДОЛЖЕНИЕ КОДА (Блок 2) ---
-# --- БЛОК КЛАВИАТУР (в начало файла, после импортов) ---
+# --- БЛОК 2: Состояния и БД ---
+class SearchState(StatesGroup):
+    waiting_for_desc = State()
+    waiting_for_price = State()
 
+def init_db():
+    conn = sqlite3.connect('users.db')
+    cur = conn.close() # Я заменю это на правильное открытие ниже
+    conn = sqlite3.connect('users.db')
+    cur = conn.cursor()
+    cur.execute('''CREATE TABLE IF NOT EXISTS users 
+                   (user_id INTEGER PRIMARY KEY, is_premium INTEGER DEFAULT 0)''')
+    conn.commit()
+    conn.close()
+
+def check_sub(user_id):
+    if user_id in ADMIN_IDS: return True
+    conn = sqlite3.connect('users.db')
+    cur = conn.cursor()
+    cur.execute("SELECT is_premium FROM users WHERE user_id = ?", (user_id,))
+    result = cur.fetchone()
+    conn.close()
+    return result and result[0] == 1
+
+# --- БЛОК 3: Клавиатуры ---
 def get_main_kb():
     builder = ReplyKeyboardBuilder()
     builder.button(text="🔍 Найти вещь")
-    builder.button(text="📖 Инструкция") # Добавили, чтобы хендлер ниже работал
+    builder.button(text="📖 Инструкция")
     builder.button(text="💳 Подписка")
     builder.button(text="⚙️ Настройки")
-    builder.adjust(1, 2, 1) # Разметка: 1 кнопка, потом 2, потом 1
+    builder.adjust(1, 2, 1)
     return builder.as_markup(resize_keyboard=True)
 
-def get_item_kb(url_wb, url_ozon):
+def get_item_kb(url_wb):
     builder = InlineKeyboardBuilder()
-    builder.row(types.InlineKeyboardButton(text="Wildberries", url=url_wb))
-    builder.row(types.InlineKeyboardButton(text="Ozon", url=url_ozon))
+    builder.row(types.InlineKeyboardButton(text="Открыть на WB", url=url_wb))
     return builder.as_markup()
-
-# --- БЛОК ХЕНДЛЕРОВ (ниже кнопок) ---
-
-@dp.message(Command("start"))
-async def cmd_start(message: types.Message):
-    welcome_text = (
-        "✨ **Добро пожаловать в LOOKY!**\n\n"
-        "Я помогу найти одежду на маркетплейсах по фото или описанию.\n\n"
-        "Чтобы начать, просто жми кнопку ниже! 👇"
-    )
-    # Передаем клавиатуру здесь
-    await message.answer(welcome_text, reply_markup=get_main_kb(), parse_mode="Markdown")
-
-@dp.message(F.text == "🔍 Найти вещь")
-async def start_search(message: types.Message, state: FSMContext):
-    await state.set_state(SearchState.waiting_for_desc)
-    await message.answer("Окей! Пришли мне **фото** вещи или **опиши** её текстом.", parse_mode="Markdown")
-
-@dp.message(Command("help"))
-@dp.message(F.text == "📖 Инструкция")
-async def cmd_help(message: types.Message):
-    await message.answer("🛍️ **Как пользоваться LOOKY:**\n\n1️⃣ Нажми 'Найти вещь'...", parse_mode="Markdown")
-# --- ПРОДОЛЖЕНИЕ КОДА (Блок 3) ---
-
-# Обработка текстового описания
-@dp.message(SearchState.waiting_for_desc, F.text)
-async def process_text_search(message: types.Message, state: FSMContext):
-    # Сохраняем текст поиска в память бота
-    await state.update_data(query_text=message.text)
-    
-    await message.answer(
-        f"Ищу: *{message.text}*\n"
-        "Теперь напиши максимальную цену (цифрами, например 3000).\n"
-        "Если цена не важна, напиши '0'.",
-        parse_mode="Markdown"
-    )
-    await state.set_state(SearchState.waiting_for_price)
-
-# Обработка ФОТО
-@dp.message(SearchState.waiting_for_desc, F.photo)
-async def process_photo_search(message: types.Message, state: FSMContext):
-    # Берем самое качественное фото из присланных
-    photo = message.photo[-1]
-    await state.update_data(photo_id=photo.file_id)
-    
-    # В будущем здесь будет логика распознавания фото
-    await message.answer(
-        "Вижу фото! Попробую найти похожие вещи.\n"
-        "На какой бюджет рассчитываешь? (Введи число)",
-        parse_mode="Markdown"
-    )
-    await state.set_state(SearchState.waiting_for_price)
     # --- ПРОДОЛЖЕНИЕ КОДА (Блок 4) ---
 
 # Эмуляция поиска (базовый пример для WB)

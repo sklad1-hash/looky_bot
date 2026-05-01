@@ -47,13 +47,14 @@ init_db()
 # --- Хендлеры (обработчики) ---
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-    await message.answer(welcome_text, reply_markup=get_main_kb(), parse_mode="Markdown")
+    await message.answer
     welcome_text = (
         "✨ **Добро пожаловать в LOOKY!**\n\n"
         "Я помогу найти одежду на маркетплейсах по фото или описанию.\n\n"
         "Чтобы узнать, как я работаю, нажми: /help\n"
         "Или просто жми кнопку ниже! 👇"
     )
+    await message.answer(welcome_text, reply_markup=get_main_kb(), parse_mode="Markdown")
 # Функция для проверки подписки
 def check_sub(user_id):
     if user_id in ADMIN_IDS: return True
@@ -105,18 +106,31 @@ async def cmd_help(message: types.Message):
 # --- ПРОДОЛЖЕНИЕ КОДА (Блок 3) ---
 
 # Обработка текстового описания
-@dp.message(SearchState.waiting_for_desc, F.text)
-async def process_text_search(message: types.Message, state: FSMContext):
-    # Сохраняем текст поиска в память бота
-    await state.update_data(query_text=message.text)
+
+@dp.message(SearchState.waiting_for_price)
+async def process_price_step(message: types.Message, state: FSMContext):
+    if not message.text.isdigit():
+        return await message.answer("Пожалуйста, введи только цифры!")
+
+    max_price = int(message.text)
+    user_data = await state.get_data()
+    # Берем текст, который юзер ввел на первом шаге
+    query = user_data.get("query_text") 
+
+    await message.answer(f"🔍 Ищу *{query}* до *{max_price}₽*...", parse_mode="Markdown")
+
+    # Вызываем реальный поиск (исправим функцию ниже)
+    found_items, min_price = await search_wb(query, max_price)
     
-    await message.answer(
-        f"Ищу: *{message.text}*\n"
-        "Теперь напиши максимальную цену (цифрами, например 3000).\n"
-        "Если цена не важна, напиши '0'.",
-        parse_mode="Markdown"
-    )
-    await state.set_state(SearchState.waiting_for_price)
+    if found_items:
+        for item in found_items[:5]: # Выводим первые 5 находок
+            text = f"🔹 **{item['name']}**\n💰 Цена: {item['price']}₽"
+            # Передаем ссылку в кнопку
+            await message.answer(text, reply_markup=get_item_kb(item['url'], "#"), parse_mode="Markdown")
+    else:
+        await message.answer(f"Ничего не нашлось. Самая низкая цена в поиске: {min_price}₽")
+    
+    await state.clear()
 
 # Обработка ФОТО
 @dp.message(SearchState.waiting_for_desc, F.photo)
@@ -141,9 +155,47 @@ async def search_wb(query, max_price):
     
     # Для примера создадим логику проверки цены
     # Представим, что мы получили список товаров 'items'
-    items = [
-        {"name": "Худи Oversize", "price": 2500, "url": "https://www.wildberries.ru/catalog/123/detail.aspx"},
-        {"name": "Худи Стиль", "price": 4500, "url": "https://www.wildberries.ru/catalog/456/detail.aspx"}
+    
+async def search_wb(query, max_price):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
+    }
+    
+    # Правильная ссылка для поиска (v4)
+    url = f"https://search.wb.ru/exactmatch/ru/common/v4/search?appType=1&curr=rub&dest=-1257786&query={query}&resultset=catalog"
+    
+    async with aiohttp.ClientSession(headers=headers) as session:
+        try:
+            async with session.get(url) as response:
+                if response.status != 200:
+                    return [], None
+                
+                data = await response.json()
+                products = data.get('data', {}).get('products', [])
+                
+                results = []
+                all_prices = []
+
+                for prod in products:
+                    # Конвертируем цену WB (у них 250000 это 2500 руб)
+                    price = prod.get('salePriceU', 0) // 100 
+                    if price > 0:
+                        all_prices.append(price)
+                    
+                    # Фильтр по цене
+                    if price <= max_price or max_price == 0:
+                        results.append({
+                            "name": prod.get('name'),
+                            "price": price,
+                            "url": f"https://www.wildberries.ru/catalog/{prod.get('id')}/detail.aspx"
+                        })
+                
+                min_found = min(all_prices) if all_prices else None
+                return results, min_found
+                
+        except Exception as e:
+            print(f"Ошибка поиска: {e}")
+            return [], None
     ]
     
     results = []

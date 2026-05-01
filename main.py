@@ -47,13 +47,13 @@ init_db()
 # --- Хендлеры (обработчики) ---
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
+    await message.answer(welcome_text, reply_markup=get_main_kb(), parse_mode="Markdown")
     welcome_text = (
         "✨ **Добро пожаловать в LOOKY!**\n\n"
         "Я помогу найти одежду на маркетплейсах по фото или описанию.\n\n"
         "Чтобы узнать, как я работаю, нажми: /help\n"
         "Или просто жми кнопку ниже! 👇"
     )
-    await message.answer(welcome_text, reply_markup=get_main_kb(), parse_mode="Markdown")
 # Функция для проверки подписки
 def check_sub(user_id):
     if user_id in ADMIN_IDS: return True

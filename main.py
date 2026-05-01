@@ -378,6 +378,13 @@ async def search_wb(query, max_price):
     }
     
     # Правильная ссылка для поиска (v4)
+
+async def search_wb(query, max_price):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36",
+    }
+    
+    # Правильная ссылка для поиска (v4)
     url = f"https://search.wb.ru/exactmatch/ru/common/v4/search?appType=1&curr=rub&dest=-1257786&query={query}&resultset=catalog"
     
     async with aiohttp.ClientSession(headers=headers) as session:
@@ -411,19 +418,7 @@ async def search_wb(query, max_price):
                 
         except Exception as e:
             print(f"Ошибка поиска: {e}")
-            return [], None 
-    
-    results = []
-    min_found_price = None
-
-    for item in items:
-        if min_found_price is None or item['price'] < min_found_price:
-            min_found_price = item['price']
-            
-        if item['price'] <= max_price:
-            results.append(item)
-    
-    return results, min_found_price
+            return [], None
 
 # Обработчик ввода цены и запуск поиска
 @dp.message(SearchState.waiting_for_price)

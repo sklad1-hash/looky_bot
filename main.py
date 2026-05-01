@@ -411,8 +411,7 @@ async def search_wb(query, max_price):
                 
         except Exception as e:
             print(f"Ошибка поиска: {e}")
-            return [], None
-    ]
+            return [], None 
     
     results = []
     min_found_price = None

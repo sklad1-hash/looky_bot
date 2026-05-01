@@ -77,7 +77,8 @@ def get_main_kb():
     builder.button(text="💳 Подписка")
     builder.button(text="⚙️ Настройки")
     builder.adjust(1, 2) # Первая кнопка на всю ширину, остальные по две в ряд
-    return builder.as_markup(resize_keyboard=True)
+    return 
+builder.as_markup(resize_keyboard=True)
 
 # Функция для создания inline-кнопок (под товаром)
 def get_item_kb(url_wb, url_ozon):

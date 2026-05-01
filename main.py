@@ -109,9 +109,7 @@ async def cmd_start(message: types.Message):
     await message.answer(welcome_text, reply_markup=get_main_kb(), parse_mode="Markdown")
 
 @dp.message(F.text == "🔍 Найти вещь")
-asy
-
-nc def start_search(message: types.Message, state: FSMContext):
+async def start_search(message: types.Message, state: FSMContext):
     await state.set_state(SearchState.waiting_for_desc)
     await message.answer("Пришли описание вещи (например: 'оверсайз худи'):")
 

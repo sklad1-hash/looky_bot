@@ -35,7 +35,6 @@ class SearchState(StatesGroup):
     waiting_for_price = State()    # Ожидание диапазона цен
 
     # Сюда позже добавим стильную клавиатуру
-    await message.answer(welcome_text, parse_mode="Markdown")
 # Инициализация базы данных
 def init_db():
     conn = sqlite3.connect('users.db')
@@ -202,7 +201,6 @@ async def start_search(message: types.Message, state: FSMContext):
     
     await state.set_state(SearchState.waiting_for_desc)
     await message.answer("Пришли фото или описание вещи:")
-    
 async def main():
     # Удаляем старые вебхуки и запускаем опрос серверов ТГ
     await bot.delete_webhook(drop_pending_updates=True)

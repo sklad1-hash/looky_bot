@@ -1,4 +1,3 @@
-
 import os
 import asyncio
 import sqlite3
@@ -10,10 +9,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
-
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.bot import DefaultBotProperties
-
 # Создаем сессию с увеличенным таймаутом
 session = AiohttpSession()
 
@@ -63,75 +60,44 @@ def check_sub(user_id):
     conn.close()
     return result and result[0] == 1
 # --- ПРОДОЛЖЕНИЕ КОДА (Блок 2) ---
+# --- БЛОК КЛАВИАТУР (в начало файла, после импортов) ---
 
-# Функция для создания главного меню
 def get_main_kb():
     builder = ReplyKeyboardBuilder()
     builder.button(text="🔍 Найти вещь")
+    builder.button(text="📖 Инструкция") # Добавили, чтобы хендлер ниже работал
     builder.button(text="💳 Подписка")
     builder.button(text="⚙️ Настройки")
-    builder.adjust(1, 2) # Первая кнопка на всю ширину, остальные по две в ряд
+    builder.adjust(1, 2, 1) # Разметка: 1 кнопка, потом 2, потом 1
     return builder.as_markup(resize_keyboard=True)
 
-# Функция для создания inline-кнопок (под товаром)
 def get_item_kb(url_wb, url_ozon):
     builder = InlineKeyboardBuilder()
     builder.row(types.InlineKeyboardButton(text="Wildberries", url=url_wb))
     builder.row(types.InlineKeyboardButton(text="Ozon", url=url_ozon))
     return builder.as_markup()
 
-# Обработчик кнопки "Найти вещь"
-@dp.message(F.text == "🔍 Найти вещь")
-async def start_search(message: types.Message, state: FSMContext):
-    await state.set_state(SearchState.waiting_for_desc)
-    await message.answer(
-        "Окей! Пришли мне **фото** вещи или **опиши** её текстом.\n"
-        "Например: 'черное худи оверсайз с принтом'",
-        parse_mode="Markdown"
-    )
+# --- БЛОК ХЕНДЛЕРОВ (ниже кнопок) ---
 
-# Обработчик кнопки "Подписка" (заготовка)
-@dp.message(F.text == "💳 Подписка")
-async def show_subs(message: types.Message):
-    await message.answer(
-        "💎 **Статус подписки:** Не активна\n\n"
-        "Подписка дает безлимитный поиск по фото.\n"
-        "Цена: 199₽ / месяц."
-    )
-    
-
-# --- Кнопки (убедись, что они стоят ПЕРЕД хендлерами) ---
-def get_main_kb():
-    builder = ReplyKeyboardBuilder()
-    builder.button(text="🔍 Найти вещь")
-    builder.button(text="📖 Инструкция")
-    builder.button(text="💳 Подписка")
-    builder.button(text="⚙️ Настройки")
-    builder.adjust(1, 2, 1)
-    return builder.as_markup(resize_keyboard=True)
-
-# --- Хендлеры (обработчики) ---
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     welcome_text = (
         "✨ **Добро пожаловать в LOOKY!**\n\n"
         "Я помогу найти одежду на маркетплейсах по фото или описанию.\n\n"
-        "Чтобы узнать, как я работаю, нажми: /help\n"
-        "Или просто жми кнопку ниже! 👇"
+        "Чтобы начать, просто жми кнопку ниже! 👇"
     )
+    # Передаем клавиатуру здесь
     await message.answer(welcome_text, reply_markup=get_main_kb(), parse_mode="Markdown")
+
+@dp.message(F.text == "🔍 Найти вещь")
+async def start_search(message: types.Message, state: FSMContext):
+    await state.set_state(SearchState.waiting_for_desc)
+    await message.answer("Окей! Пришли мне **фото** вещи или **опиши** её текстом.", parse_mode="Markdown")
 
 @dp.message(Command("help"))
 @dp.message(F.text == "📖 Инструкция")
 async def cmd_help(message: types.Message):
-    instruction = (
-        "🛍️ **Как пользоваться LOOKY:**\n\n"
-        "1️⃣ Нажми **'Найти вещь'**\n"
-        "2️⃣ Пришли **фото** или **текст**\n"
-        "3️⃣ Укажи **цену** (например, 3000)\n\n"
-        "Бот сам сравнит цены и выдаст лучшие ссылки! 🔥"
-    )
-    await message.answer(instruction, parse_mode="Markdown")
+    await message.answer("🛍️ **Как пользоваться LOOKY:**\n\n1️⃣ Нажми 'Найти вещь'...", parse_mode="Markdown")
 # --- ПРОДОЛЖЕНИЕ КОДА (Блок 3) ---
 
 # Обработка текстового описания

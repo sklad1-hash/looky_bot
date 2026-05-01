@@ -47,7 +47,6 @@ init_db()
 # --- Хендлеры (обработчики) ---
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-    await message.answer
     welcome_text = (
         "✨ **Добро пожаловать в LOOKY!**\n\n"
         "Я помогу найти одежду на маркетплейсах по фото или описанию.\n\n"

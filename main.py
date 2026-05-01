@@ -85,7 +85,8 @@ def get_item_kb(url_wb, url_ozon):
     builder = InlineKeyboardBuilder()
     builder.row(types.InlineKeyboardButton(text="Wildberries", url=url_wb))
     builder.row(types.InlineKeyboardButton(text="Ozon", url=url_ozon))
-    return builder.as_markup()
+    return 
+builder.as_markup()
 
 # Обработчик кнопки "Найти вещь"
 @dp.message(F.text == "🔍 Найти вещь")
@@ -114,7 +115,8 @@ def get_main_kb():
     builder.button(text="📖 Инструкция")
     builder.button(text="💳 Подписка")
     builder.adjust(1, 1, 1)
-    return builder.as_markup(resize_keyboard=True)
+    return
+builder.as_markup(resize_keyboard=True)
 
 # --- Хендлеры (обработчики) ---
 @dp.message(Command("start"))

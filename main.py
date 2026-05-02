@@ -145,17 +145,41 @@ async def process_text_search(message: types.Message, state: FSMContext):
     await message.answer("Какой максимальный бюджет в рублях? (Напиши просто число)", reply_markup=get_back_kb())
     await state.set_state(SearchState.waiting_for_price)
 
+# Обработка ФОТО
+@dp.message(SearchState.waiting_for_desc, F.photo)
+async def process_photo_search(message: types.Message, state: FSMContext):
+    # Берем самое четкое фото из тех, что прислали
+    photo = message.photo[-1]
+    # Сохраняем ID фотки, чтобы потом не потерять
+    await state.update_data(photo_id=photo.file_id, query_text="Товар по фото")
+    
+    await message.answer(
+        "Вижу! Фотка чёткая. 📸\n"
+        "Теперь напиши, сколько готов(а) за это выложить (бюджет цифрами):",
+        reply_markup=get_back_kb()
+    )
+    await state.set_state(SearchState.waiting_for_price)
+
 @dp.message(SearchState.waiting_for_price)
 async def process_price_step(message: types.Message, state: FSMContext):
     if message.text == "⬅️ Назад в меню": return
     if not message.text.isdigit():
-        return await message.answer("Братан, введи только цифры!")
+        return await message.answer("Йо, пиши только цифры, без лишних слов!")
 
     max_price = int(message.text)
     user_data = await state.get_data()
-    query = user_data.get("query_text", "одежда")
+    
+    # Если был текст — берем его, если фото — будет "Товар по фото"
+    query = user_data.get("query_text", "шмот")
+    photo_id = user_data.get("photo_id")
 
-    await message.answer(f"🔍 Погнали искать {query} до {max_price}₽...", reply_markup=get_main_kb())
+    if photo_id:
+        await message.answer(f"🔍 Начинаю поиск по твоему фото в пределах {max_price}₽...")
+    else:
+        await message.answer(f"🔍 Погнали искать {query} до {max_price}₽...")
+
+    # Дальше идет твой вызов функции search_wb и вывод результатов...
+
     found_items, min_price = await search_wb(query, max_price)
 
     if found_items:
